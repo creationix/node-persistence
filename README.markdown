@@ -15,6 +15,37 @@ The four backend drivers that we plan on supporting initially are:
  
 So far the PostgreSQL and Sqlite3 drivers are almost done.  The other two are still in the research/implementation stage.
 
+Each backend follows the same interface.  This means that new backends can be developed by independent parties and used.
+
+### Driver API
+
+ - `Connection(*connection_parameters)` - Constructor for database handles. The connection parameters are driver specific.
+   - `<connect>` - Event fired when a connection is successfully made.  Queries can safely be made before this point, but they won't se sent to the database engine yet for obvious reasons.
+   - `<error>(reason)` - Event fired when there is a problem setting up the connection.  `reason` is a string describing what went wrong.
+   - `query_stream(sql, [*params])` - Method that queries the database.  If placeholders are used in the sql, they are filled in with the data from params.
+     - `<row>(json)` - Event fired once for every row/record in the result set.  Allows for streaming of large datasets.
+     - `<complete>` - Event fired when there are no more rows expected.
+       `<error>(reason)` - Event fired when the query is malformed or otherwise invalid.
+   - `query(sql, [*params])` - Same as query stream, but with different events emitted.
+     - `<complete>(data)` - Event fired when the query has returned.  Contains an array of JSON objects.
+       `<error>(reason)` - Event fired when the query is malformed or otherwise invalid.
+   - TODO: Define rest of api...   
+
+Sample Usage:
+
+    var sqlite = require('./drivers/sqlite');
+    var db = sqlite.Connection('test.db');
+    db.addListener('connect', function () {
+      sys.debug("Connection established");
+    });
+    db.addListener('error', function (reason) {
+      sys.debug("Connection error: " + reason);
+    });
+    db.query("SELECT * FROM users").addCallback('complete', function (data) {
+      sys.p(data);
+    });
+    // TODO: Give more examples.
+
 ## Object Mapper
 
 This is an API layer in spirit to ActiveRecord or DataMapper, but not as closely tied to relational databases and of course designed for Node.
