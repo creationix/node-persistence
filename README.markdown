@@ -23,17 +23,17 @@ All methods return promise objects.  The meaning and parameters of the success e
 
 The error event on the connection object gets all errors from sub-events routed to it automatically.  For example, if you attach an errback to the `new Connection` object, then any errors emmited by query, save, execute, or delete will be routed to it.
 
- - `Connection(*connection_parameters)` - Constructor for database handles. The connection parameters are driver specific.
-   - `<success>` - Event fired when a connection is successfully made.  Queries can safely be made before this point, but they won't se sent to the database engine yet for obvious reasons.
-   - `<error>` - Event fired when something goes wrong in either the connection or any of the sub-methods.
-   - `query(sql [, *params [, row_callback]])` - Method that queries the database.  If placeholders are used in the sql, they are filled in with the data from params.  If you wish to stream the results, pass in a callback function as the last argument
-     - `<success>(data)` - Event fired when the query has returned.  Contains an array of JSON objects if a row_callback wasn't passed in to the query method.
-   - `execute(sql, [*params])` - Execute arbitrary sql against the database.
-     - `<success>` - Event fired if successful.
-   - `save(table, data)` - Saves a row to the database.  If the id is undefined, then it's an insert, otherwise it's an update.
-     - `<success>(type)` - Event fired when done.  Type is either "insert", "update", or "upsert".  The insert id is not returned, however the passed in data object from the save command has it's ID set automatically.
-   - `delete(table, id)` - Deletes a record by id.
-     - `<success>` - Event fired if successful.
+  - `new_connection(*connection_parameters)` - Returns a connection object. The connection parameters are driver specific.
+    - `<success>` - Event fired when a connection is successfully made.  Queries can safely be made before this point, but they won't se sent to the database engine yet for obvious reasons.
+    - `<error>` - Event fired when something goes wrong in either the connection or any of the sub-methods.
+    - `query(sql [, *params [, row_callback]])` - Method that queries the database.  If placeholders are used in the sql, they are filled in with the data from params.  If you wish to stream the results, pass in a callback function as the last argument
+      - `<success>(data)` - Event fired when the query has returned.  Contains an array of JSON objects if a row_callback wasn't passed in to the query method.
+    - `execute(sql, [*params])` - Execute arbitrary sql against the database.
+      - `<success>` - Event fired if successful.
+    - `save(table, data)` - Saves a row to the database.  If the id is undefined, then it's an insert, otherwise it's an update.
+      - `<success>(type)` - Event fired when done.  Type is either "insert", "update", or "upsert".  The insert id is not returned, however the passed in data object from the save command has it's ID set automatically.
+    - `delete(table, id)` - Deletes a record by id.
+      - `<success>` - Event fired if successful.
 
 Sample Usage:
 
@@ -72,6 +72,9 @@ Sample Usage:
       // Query with named parameters
       db.query("SELECT * FROM users WHERE age > :min AND age <= :max", {min: 18, max: 50}).addCallback(sys.p);
       
+      db.close().addCallback(function () {
+        sys.debug("Connection closed")
+      })
     });
     
 
