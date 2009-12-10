@@ -28,8 +28,16 @@ Each backend follows the same interface.  This means that new backends can be de
        `<error>(reason)` - Event fired when the query is malformed or otherwise invalid.
    - `query(sql, [*params])` - Same as query stream, but with different events emitted.
      - `<complete>(data)` - Event fired when the query has returned.  Contains an array of JSON objects.
-       `<error>(reason)` - Event fired when the query is malformed or otherwise invalid.
-   - TODO: Define rest of api...   
+     - `<error>(reason)` - Event fired when the query is malformed or otherwise invalid.
+   - `execute(sql, [*params])` - Execute arbitrary sql against the database.
+     - `<complete>` - Event fired if successful.
+     - `<error>(reason)` - Event fired in the case of an error.
+   - `save(table, data)` - Saves a row to the database.  If the id is undefined, then it's an insert, otherwise it's an update.
+     - `<complete>(type)` - Event fired when done.  Type is either "insert", "update", or "upsert".  The insert id is not returned, however the passed in data object from the save command has it's ID set automatically.
+     - `<error>(reason)` - Event fired in the case of an error.
+   - `delete(table, id)` - Deletes a record by id.
+     - `<complete>` - Event fired if successful.
+     - `<error>(reason)` - Event fired in the case of an error.
 
 Sample Usage:
 
