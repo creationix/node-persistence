@@ -22,13 +22,9 @@ Each backend follows the same interface.  This means that new backends can be de
  - `Connection(*connection_parameters)` - Constructor for database handles. The connection parameters are driver specific.
    - `<connect>` - Event fired when a connection is successfully made.  Queries can safely be made before this point, but they won't se sent to the database engine yet for obvious reasons.
    - `<error>(reason)` - Event fired when there is a problem setting up the connection.  `reason` is a string describing what went wrong.
-   - `query_stream(sql, [*params])` - Method that queries the database.  If placeholders are used in the sql, they are filled in with the data from params.
-     - `<row>(json)` - Event fired once for every row/record in the result set.  Allows for streaming of large datasets.
-     - `<complete>` - Event fired when there are no more rows expected.
+   - `query(sql [, params [, row_callback]])` - Method that queries the database.  If placeholders are used in the sql, they are filled in with the data from params.  If you wish to stream the results, pass in a callback function as the last argument
+     - `<complete>(data)` - Event fired when the query has returned.  Contains an array of JSON objects if a row_callback wasn't passed in to the query method.
        `<error>(reason)` - Event fired when the query is malformed or otherwise invalid.
-   - `query(sql, [*params])` - Same as query stream, but with different events emitted.
-     - `<complete>(data)` - Event fired when the query has returned.  Contains an array of JSON objects.
-     - `<error>(reason)` - Event fired when the query is malformed or otherwise invalid.
    - `execute(sql, [*params])` - Execute arbitrary sql against the database.
      - `<complete>` - Event fired if successful.
      - `<error>(reason)` - Event fired in the case of an error.
