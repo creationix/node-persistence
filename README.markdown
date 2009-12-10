@@ -19,11 +19,14 @@ Each backend follows the same interface.  This means that new backends can be de
 
 ### Driver API
 
-All methods return promise objects.  The meaning and parameters of the success events are specified. All promises emit error events with a string explaining the problem if something goes wrong.
+All methods return promise objects.  The meaning and parameters of the success events are specified.
+
+The error event on the connection object gets all errors from sub-events routed to it automatically.  For example, if you attach an errback to the `new Connection` object, then any errors emmited by query, save, execute, or delete will be routed to it.
 
  - `Connection(*connection_parameters)` - Constructor for database handles. The connection parameters are driver specific.
    - `<success>` - Event fired when a connection is successfully made.  Queries can safely be made before this point, but they won't se sent to the database engine yet for obvious reasons.
-   - `query(sql [, params [, row_callback]])` - Method that queries the database.  If placeholders are used in the sql, they are filled in with the data from params.  If you wish to stream the results, pass in a callback function as the last argument
+   - `<error>` - Event fired when something goes wrong in either the connection or any of the sub-methods.
+   - `query(sql [, *params [, row_callback]])` - Method that queries the database.  If placeholders are used in the sql, they are filled in with the data from params.  If you wish to stream the results, pass in a callback function as the last argument
      - `<success>(data)` - Event fired when the query has returned.  Contains an array of JSON objects if a row_callback wasn't passed in to the query method.
    - `execute(sql, [*params])` - Execute arbitrary sql against the database.
      - `<success>` - Event fired if successful.
@@ -35,37 +38,36 @@ All methods return promise objects.  The meaning and parameters of the success e
 Sample Usage:
 
     var sqlite = require('./drivers/sqlite');
-
+    
     // Connect to a database
     var db = sqlite.Connection('test.db');
     db.addCallback(function () {
       sys.debug("Connection established");
     }).addErrback(function (reason) {
-      sys.debug("Connection error: " + reason);
+      sys.debug("Database error: " + reason);
     });
     
     // Non-query example
-    db.execute("CREATE TABLE users(id serial, name text, age int)");
-    
-    for (var i = 0; i < 100; i++) {
-      db.save('users', {name: "User" + i, age: i}).addErrback(sys.debug);
-    }
-    
-    // Buffered query
-    db.query("SELECT * FROM users").addCallback(function (data) {
-      sys.p(data);
-    }).addErrback(function (reason) {
-      sys.debug(reason);
+    db.execute("CREATE TABLE users(id serial, name text, age int)").addCallback(function () {
+      
+      for (var i = 0; i < 100; i++) {
+        db.save('users', {name: "User" + i, age: i}).
+      }
+      
+      // Buffered query
+      db.query("SELECT * FROM users").addCallback(function (data) {
+        sys.p(data);
+      });
+      
+      // Streaming query
+      db.query("SELECT * FROM users", function (row) {
+        sys.p(row)
+      }).addCallback(function () {
+        sys.debug("Done");
+      });
+      
     });
     
-    // Streaming query
-    db.query("SELECT * FROM users", function (row) {
-      sys.p(row)
-    }).addCallback(function () {
-      sys.puts("Done");
-    }).addErrback(function (reason) {
-      sys.debug(reason);
-    });
 
 *Note* that even though the database commands are asynchronous, the queries themselves are buffered internally in the Sqlite3 driver so we can treat the db commands as if they were synchronous..  This is probably bad practice since the PostgreSQL driver doesn't have this constraint.
 
