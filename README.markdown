@@ -66,6 +66,12 @@ Sample Usage:
         sys.debug("Done");
       });
       
+      // Query with positioned parameters
+      db.query("SELECT * FROM users WHERE age > ? AND age < ?", 18, 50).addCallback(sys.p);
+      
+      // Query with named parameters
+      db.query("SELECT * FROM users WHERE age > :min AND age <= :max", {min: 18, max: 50}).addCallback(sys.p);
+      
     });
     
 
