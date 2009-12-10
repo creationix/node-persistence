@@ -19,36 +19,55 @@ Each backend follows the same interface.  This means that new backends can be de
 
 ### Driver API
 
+All methods return promise objects.  The meaning and parameters of the success events are specified. All promises emit error events with a string explaining the problem if something goes wrong.
+
  - `Connection(*connection_parameters)` - Constructor for database handles. The connection parameters are driver specific.
-   - `<connect>` - Event fired when a connection is successfully made.  Queries can safely be made before this point, but they won't se sent to the database engine yet for obvious reasons.
-   - `<error>(reason)` - Event fired when there is a problem setting up the connection.  `reason` is a string describing what went wrong.
+   - `<success>` - Event fired when a connection is successfully made.  Queries can safely be made before this point, but they won't se sent to the database engine yet for obvious reasons.
    - `query(sql [, params [, row_callback]])` - Method that queries the database.  If placeholders are used in the sql, they are filled in with the data from params.  If you wish to stream the results, pass in a callback function as the last argument
-     - `<complete>(data)` - Event fired when the query has returned.  Contains an array of JSON objects if a row_callback wasn't passed in to the query method.
-       `<error>(reason)` - Event fired when the query is malformed or otherwise invalid.
+     - `<success>(data)` - Event fired when the query has returned.  Contains an array of JSON objects if a row_callback wasn't passed in to the query method.
    - `execute(sql, [*params])` - Execute arbitrary sql against the database.
-     - `<complete>` - Event fired if successful.
-     - `<error>(reason)` - Event fired in the case of an error.
+     - `<success>` - Event fired if successful.
    - `save(table, data)` - Saves a row to the database.  If the id is undefined, then it's an insert, otherwise it's an update.
-     - `<complete>(type)` - Event fired when done.  Type is either "insert", "update", or "upsert".  The insert id is not returned, however the passed in data object from the save command has it's ID set automatically.
-     - `<error>(reason)` - Event fired in the case of an error.
+     - `<success>(type)` - Event fired when done.  Type is either "insert", "update", or "upsert".  The insert id is not returned, however the passed in data object from the save command has it's ID set automatically.
    - `delete(table, id)` - Deletes a record by id.
-     - `<complete>` - Event fired if successful.
-     - `<error>(reason)` - Event fired in the case of an error.
+     - `<success>` - Event fired if successful.
 
 Sample Usage:
 
     var sqlite = require('./drivers/sqlite');
+
+    // Connect to a database
     var db = sqlite.Connection('test.db');
-    db.addListener('connect', function () {
+    db.addCallback(function () {
       sys.debug("Connection established");
-    });
-    db.addListener('error', function (reason) {
+    }).addErrback(function (reason) {
       sys.debug("Connection error: " + reason);
     });
-    db.query("SELECT * FROM users").addCallback('complete', function (data) {
+    
+    // Non-query example
+    db.execute("CREATE TABLE users(id serial, name text, age int)");
+    
+    for (var i = 0; i < 100; i++) {
+      db.save('users', {name: "User" + i, age: i}).addErrback(sys.debug);
+    }
+    
+    // Buffered query
+    db.query("SELECT * FROM users").addCallback(function (data) {
       sys.p(data);
+    }).addErrback(function (reason) {
+      sys.debug(reason);
     });
-    // TODO: Give more examples.
+    
+    // Streaming query
+    db.query("SELECT * FROM users", function (row) {
+      sys.p(row)
+    }).addCallback(function () {
+      sys.puts("Done");
+    }).addErrback(function (reason) {
+      sys.debug(reason);
+    });
+
+*Note* that even though the database commands are asynchronous, the queries themselves are buffered internally in the Sqlite3 driver so we can treat the db commands as if they were synchronous..  This is probably bad practice since the PostgreSQL driver doesn't have this constraint.
 
 ## Object Mapper
 
