@@ -2,10 +2,9 @@ var sqlite = require('./drivers/sqlite');
 var sys = require('sys');
 
 // Connect to a database
-var db = sqlite.new_connection('t');
-db.addCallback(function (settings) {
+var db = sqlite.new_connection('test.db');
+db.addCallback(function () {
   sys.debug("Connection established");
-  sys.debug(sys.inspect(settings));
 }).addErrback(function (reason) {
   sys.debug("Database error: " + reason);
 });
@@ -37,6 +36,4 @@ db.query("SELECT * FROM users WHERE age > ? AND age <= ?", 18, 50).addCallback(s
 // Query with named parameters
 db.query("SELECT * FROM users WHERE age > :min AND age <= :max", {min: 18, max: 50}).addCallback(sys.p);
 
-db.close().addCallback(function () {
-  sys.debug("Connection closed")
-});
+db.close();
