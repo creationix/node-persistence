@@ -23,6 +23,10 @@ db.save('users', data).addCallback(function (insert_id) {
   sys.debug("Saving with new value: " + sys.inspect(data));
   db.save('users', data).addCallback(function () {
     sys.debug("data after update: " + sys.inspect(data));
+    sys.debug("Removing from database: " + sys.inspect(data));
+    db.remove('users', data).addCallback(function () {
+      sys.debug("data after remove: " + sys.inspect(data));
+    });
   });
 });
   

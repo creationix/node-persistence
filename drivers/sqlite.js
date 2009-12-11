@@ -8,7 +8,7 @@
 //     - `<success>` - Event fired if successful.
 //   - `save(table, data)` - Saves a row to the database.  If the id is undefined, then it's an insert, otherwise it's an update.
 //     - `<success>([insert_id])` - Event fired when done.  If an insert was performed, the insert_id is returned.  Also the passed in data object from the save command has it's `_id` set automatically.
-//   - `delete(table, id)` - Deletes a record by id.
+//   - `remove(table, id/data)` - Removes a record by id from the database.  Removes the `_id` if a data object is passed in.
 //     - `<success>` - Event fired if successful.
 //   - `close()` - Close the connection to the database once the queue is empty.
 
@@ -188,44 +188,6 @@ exports.new_connection = function (path) {
     return promise;
   };
   
-  conn.save = function (table, data) {
-    var keys = [], 
-        values = [],
-        pairs = [],
-        promise = new process.Promise(),
-        key;
-    
-    if (data._id) {
-      for (key in data) {
-        if (data.hasOwnProperty(key) && key !== '_id') {
-          pairs.push(key + " = " + sql_escape(data[key]));
-        }
-      }
-      conn.execute("UPDATE " + table
-        + " SET " + pairs.join(", ")
-        + " WHERE rowid = " + sql_escape(data._id)
-      ).addCallback(function () {
-        promise.emitSuccess();
-      });
-    } else {
-      for (key in data) {
-        if (data.hasOwnProperty(key)) {
-          keys.push(key);
-          values.push(sql_escape(data[key]));
-        }
-      }
-      conn.query("INSERT INTO "
-        + table + "(" + keys.join(", ") + ")"
-        + " VALUES (" + values.join(", ") + ");"
-        + "SELECT last_insert_rowid() AS _id"
-      ).addCallback(function (result) {
-        data._id = parseInt(result[0]._id);
-        promise.emitSuccess(data._id);
-      });
-    }
-    return promise;
-  };
-
   conn.query = function (sql/*, *parameters, row_callback*/) {
     var row_callback, parameters, promise;
 
@@ -276,6 +238,57 @@ exports.new_connection = function (path) {
     return promise;
   };
   
+  conn.remove = function(table, data) {
+    var promise = new process.Promise();
+    if (typeof data === 'number') {
+      data = {_id: data};
+    }
+    conn.execute("DELETE FROM " + table
+      + " WHERE rowid = " + sql_escape(data._id)
+    ).addCallback(function () {
+      delete data._id;
+      promise.emitSuccess();
+    });
+    return promise;
+  }
+  conn.save = function (table, data) {
+    var keys = [], 
+        values = [],
+        pairs = [],
+        promise = new process.Promise(),
+        key;
+    
+    if (data._id) {
+      for (key in data) {
+        if (data.hasOwnProperty(key) && key !== '_id') {
+          pairs.push(key + " = " + sql_escape(data[key]));
+        }
+      }
+      conn.execute("UPDATE " + table
+        + " SET " + pairs.join(", ")
+        + " WHERE rowid = " + sql_escape(data._id)
+      ).addCallback(function () {
+        promise.emitSuccess();
+      });
+    } else {
+      for (key in data) {
+        if (data.hasOwnProperty(key)) {
+          keys.push(key);
+          values.push(sql_escape(data[key]));
+        }
+      }
+      conn.query("INSERT INTO "
+        + table + "(" + keys.join(", ") + ")"
+        + " VALUES (" + values.join(", ") + ");"
+        + "SELECT last_insert_rowid() AS _id"
+      ).addCallback(function (result) {
+        data._id = parseInt(result[0]._id);
+        promise.emitSuccess(data._id);
+      });
+    }
+    return promise;
+  };
+
   conn.close = function () {
     terminated = true;
     cycle();
