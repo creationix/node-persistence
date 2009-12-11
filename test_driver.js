@@ -2,10 +2,10 @@ var sqlite = require('./drivers/sqlite');
 var sys = require('sys');
 
 // Connect to a database
-var db = sqlite.new_connection('test2.db');
-db.addCallback(function () {
+var db = sqlite.new_connection('test.db');
+db.addListener('connection', function () {
   sys.debug("Connection established");
-}).addErrback(function (reason) {
+}).addListener('error', function (reason) {
   sys.debug("Database error: " + reason);
 });
 

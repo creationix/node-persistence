@@ -24,7 +24,7 @@ All methods return promise objects.  The meaning and parameters of the success e
 The error event on the connection object gets all errors from sub-events routed to it automatically.  For example, if you attach an errback to the `new Connection` object, then any errors emmited by query, save, execute, or delete will be routed to it.
 
   - `new_connection(*connection_parameters)` - Returns a connection object. The connection parameters are driver specific.
-    - `<success>` - Event fired when a connection is successfully made.  Queries can safely be made before this point, but they won't se sent to the database engine yet for obvious reasons.
+    - `<connection>` - Event fired when a connection is successfully made.  Queries can safely be made before this point, but they won't se sent to the database engine yet for obvious reasons.
     - `<error>(reason)` - Event fired when something goes wrong in either the connection or any of the sub-methods.
     - `query(sql [, *params [, row_callback]])` - Method that queries the database.  If placeholders are used in the sql, they are filled in with the data from params.  If you wish to stream the results, pass in a callback function as the last argument
       - `<success>(data)` - Event fired when the query has returned.  Contains an array of JSON objects if a row_callback wasn't passed in to the query method.
@@ -43,10 +43,10 @@ Sample Usage:
     var sys = require('sys');
 
     // Connect to a database
-    var db = sqlite.new_connection('test2.db');
-    db.addCallback(function () {
+    var db = sqlite.new_connection('test.db');
+    db.addListener('connection', function () {
       sys.debug("Connection established");
-    }).addErrback(function (reason) {
+    }).addListener('error', function (reason) {
       sys.debug("Database error: " + reason);
     });
 

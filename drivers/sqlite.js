@@ -1,6 +1,6 @@
 // Driver API
 // - `new_connection(*connection_parameters)` - Returns a connection object. The connection parameters are driver specific.
-//   - `<success>` - Event fired when a connection is successfully made.  Queries can safely be made before this point, but they won't se sent to the database engine yet for obvious reasons.
+//   - `<connection>` - Event fired when a connection is successfully made.  Queries can safely be made before this point, but they won't se sent to the database engine yet for obvious reasons.
 //   - `<error>(reason)` - Event fired when something goes wrong in either the connection or any of the sub-methods.
 //   - `query(sql [, *params [, row_callback]])` - Method that queries the database.  If placeholders are used in the sql, they are filled in with the data from params.  If you wish to stream the results, pass in a callback function as the last argument
 //     - `<success>(data)` - Event fired when the query has returned.  Contains an array of JSON objects if a row_callback wasn't passed in to the query method.
@@ -98,7 +98,7 @@ exports.new_connection = function (path) {
       dequeued = 0, // Pointer used by the delayed shift mechanism
       callback = null, // Callback for the query in progress
       started, terminated, // Flags set when connection is verified and when close is called.
-      conn = new process.Promise(); // The connection object that's returned.
+      conn = new process.EventEmitter(); // The connection object that's returned.
 
   // Enable the timer footer so that we can detect zero length results
   child.write(".timer on\n");
@@ -110,7 +110,7 @@ exports.new_connection = function (path) {
     if (string !== undefined) {
       // sys.debug("output: " + sys.inspect(string));
       if (!started && string.match(/^SQLite version \d+\.\d+\.\d+/)) {
-        conn.emitSuccess();
+        conn.emit('connection');
         started = true;
         string = undefined;
       }
@@ -155,7 +155,7 @@ exports.new_connection = function (path) {
     // sys.debug("error: " + sys.inspect(data));
     // Ignore the null that sometimes gets emitted on close
     if (data) {
-      conn.emitError(data);
+      conn.emit('error', data);
     }
   });
 
@@ -177,7 +177,8 @@ exports.new_connection = function (path) {
     queue.push([sql + ";\n", function (result) {
       if (result.length > 0) {
         promise.emitError(result);
-        conn.emitError(result);
+        sys.debug(result);
+        conn.emit('error', result);
       } else {
         promise.emitSuccess(result);
       }
@@ -217,7 +218,8 @@ exports.new_connection = function (path) {
       // If parse returns a string it means there was an error.
       if (data.constructor.name !== "Array") {
         promise.emitError(data);
-        conn.emitError(data);
+        sys.debug(data);
+        conn.emit('error', data);
         return;
       }
       
