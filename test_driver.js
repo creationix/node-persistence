@@ -2,7 +2,7 @@ var sqlite = require('./drivers/sqlite');
 var sys = require('sys');
 
 // Connect to a database
-var db = sqlite.new_connection('test.db');
+var db = sqlite.new_connection('test2.db');
 db.addCallback(function () {
   sys.debug("Connection established");
 }).addErrback(function (reason) {
@@ -10,24 +10,38 @@ db.addCallback(function () {
 });
 
 // Non-query example
-db.execute("CREATE TABLE users(id serial, name text, age int)").addCallback(function () {
+db.execute("CREATE TABLE users(name text, age int)").addCallback(function () {
   sys.debug("Table created");
 });
+
+var data = {name: "Test", age: 100};
+sys.debug("Starting save: " + sys.inspect(data));
+db.save('users', data).addCallback(function (insert_id) {
+  sys.debug("Save result: " + sys.inspect(insert_id));
+  sys.debug("data after insert: " + sys.inspect(data));
+  data.name = "Test Changed";
+  sys.debug("Saving with new value: " + sys.inspect(data));
+  db.save('users', data).addCallback(function () {
+    sys.debug("data after update: " + sys.inspect(data));
+  });
+});
   
-// for (var i = 0; i < 100; i++) {
-//   db.save('users', {name: "User" + i, age: i});
-// }
+for (var i = 0; i < 10; i++) {
+  db.save('users', {name: "User" + i, age: i});
+}
 
 // Buffered query
+sys.debug("Starting buffered query");
 db.query("SELECT * FROM users").addCallback(function (data) {
-  sys.p(data);
+  sys.debug("buffered Done: " + sys.inspect(data));
 });
 
 // Streaming query
+sys.debug("Starting streaming query");
 db.query("SELECT * FROM users", function (row) {
-  sys.p(row)
+  sys.debug("streaming Row: " + sys.inspect(row));
 }).addCallback(function () {
-  sys.debug("Done");
+  sys.debug("streaming Done");
 });
 
 // Query with positioned parameters

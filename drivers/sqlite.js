@@ -7,10 +7,10 @@
 //   - `execute(sql, [*params])` - Execute arbitrary sql against the database.
 //     - `<success>` - Event fired if successful.
 //   - `save(table, data)` - Saves a row to the database.  If the id is undefined, then it's an insert, otherwise it's an update.
-//     - `<success>(type)` - Event fired when done.  Type is either "insert", "update", or "upsert".  The insert id is not returned, however the passed in data object from the save command has it's ID set automatically.
+//     - `<success>([insert_id])` - Event fired when done.  If an insert was performed, the insert_id is returned.  Also the passed in data object from the save command has it's `_id` set automatically.
 //   - `delete(table, id)` - Deletes a record by id.
 //     - `<success>` - Event fired if successful.
-//   - `close()` - Close the connection to the database when the queue is empty, and don't accept any new queries into the queue.
+//   - `close()` - Close the connection to the database once the queue is empty.
 
 var sys = require('sys');
 
@@ -166,10 +166,10 @@ exports.new_connection = function (path) {
   conn.execute = function (sql) {
     var promise = new process.Promise();
 
-    // Don't accept more if close has been called.
-    if (terminated) {
-      return promise;
-    }
+    // // Don't accept more if close has been called.
+    // if (terminated) {
+    //   return promise;
+    // }
     
     // Merge the parameters in with the sql if needed.
     sql = merge(sql, Array.prototype.slice.call(arguments, 1));
@@ -188,9 +188,42 @@ exports.new_connection = function (path) {
     return promise;
   };
   
-  conn.save = function (sql) {
-    sys.debug("TODO: Implement save");
-    return new process.Promise();
+  conn.save = function (table, data) {
+    var keys = [], 
+        values = [],
+        pairs = [],
+        promise = new process.Promise(),
+        key;
+    
+    if (data._id) {
+      for (key in data) {
+        if (data.hasOwnProperty(key) && key !== '_id') {
+          pairs.push(key + " = " + sql_escape(data[key]));
+        }
+      }
+      conn.execute("UPDATE " + table
+        + " SET " + pairs.join(", ")
+        + " WHERE rowid = " + sql_escape(data._id)
+      ).addCallback(function () {
+        promise.emitSuccess();
+      });
+    } else {
+      for (key in data) {
+        if (data.hasOwnProperty(key)) {
+          keys.push(key);
+          values.push(sql_escape(data[key]));
+        }
+      }
+      conn.query("INSERT INTO "
+        + table + "(" + keys.join(", ") + ")"
+        + " VALUES (" + values.join(", ") + ");"
+        + "SELECT last_insert_rowid() AS _id"
+      ).addCallback(function (result) {
+        data._id = parseInt(result[0]._id);
+        promise.emitSuccess(data._id);
+      });
+    }
+    return promise;
   };
 
   conn.query = function (sql/*, *parameters, row_callback*/) {
@@ -198,10 +231,10 @@ exports.new_connection = function (path) {
 
     promise = new process.Promise();
 
-    // Don't accept more if close has been called.
-    if (terminated) {
-      return promise;
-    }
+    // // Don't accept more if close has been called.
+    // if (terminated) {
+    //   return promise;
+    // }
     
     // Grab the variable length parameters and the row_callback is there is one.
     parameters = Array.prototype.slice.call(arguments, 1);
@@ -214,7 +247,6 @@ exports.new_connection = function (path) {
       sql = merge(sql, parameters);
     }
 
-    
     queue.push([sql + ";\n", function (string) {
 
       // Parse the result into an array of rows
