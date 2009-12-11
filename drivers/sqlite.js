@@ -54,7 +54,7 @@ function merge(sql, parameters) {
       sql = sql.replace("?", sql_escape(param));
     });
   }
-  return sql
+  return sql;
 }
 
 // Parse a result string from sqlite into an array of json objects
@@ -69,7 +69,7 @@ function parse(string) {
   p = string.indexOf("\n");
 
   // SQL errors return a single line ending in newline.
-  if (p == string.length - 1) {
+  if (p === string.length - 1) {
     return string.substr(0, p);
   }
 
@@ -226,7 +226,7 @@ exports.new_connection = function (path) {
       if (row_callback) {
         data.forEach(function (row) {
           row_callback(row);
-        })
+        });
         promise.emitSuccess();
       } else {
         promise.emitSuccess(data);
@@ -238,19 +238,22 @@ exports.new_connection = function (path) {
     return promise;
   };
   
-  conn.remove = function(table, data) {
+  // Remove an entry from the database and remove the _id from the data object.
+  conn.remove = function (table, data) {
     var promise = new process.Promise();
     if (typeof data === 'number') {
       data = {_id: data};
     }
-    conn.execute("DELETE FROM " + table
-      + " WHERE rowid = " + sql_escape(data._id)
+    conn.execute("DELETE FROM " + table +
+      " WHERE rowid = " + sql_escape(data._id)
     ).addCallback(function () {
       delete data._id;
       promise.emitSuccess();
     });
     return promise;
-  }
+  };
+  
+  // Save a data object to the database.  If it already has an _id do an update.
   conn.save = function (table, data) {
     var keys = [], 
         values = [],
@@ -264,9 +267,9 @@ exports.new_connection = function (path) {
           pairs.push(key + " = " + sql_escape(data[key]));
         }
       }
-      conn.execute("UPDATE " + table
-        + " SET " + pairs.join(", ")
-        + " WHERE rowid = " + sql_escape(data._id)
+      conn.execute("UPDATE " + table +
+        " SET " + pairs.join(", ") +
+        " WHERE rowid = " + sql_escape(data._id)
       ).addCallback(function () {
         promise.emitSuccess();
       });
@@ -277,23 +280,24 @@ exports.new_connection = function (path) {
           values.push(sql_escape(data[key]));
         }
       }
-      conn.query("INSERT INTO "
-        + table + "(" + keys.join(", ") + ")"
-        + " VALUES (" + values.join(", ") + ");"
-        + "SELECT last_insert_rowid() AS _id"
+      conn.query("INSERT INTO " +
+        table + "(" + keys.join(", ") + ")" +
+        " VALUES (" + values.join(", ") + ");" +
+        "SELECT last_insert_rowid() AS _id"
       ).addCallback(function (result) {
-        data._id = parseInt(result[0]._id);
+        data._id = parseInt(result[0]._id, 10);
         promise.emitSuccess(data._id);
       });
     }
     return promise;
   };
 
+  // Close the child process as soon as the queue is empty.  This allows node to finish.
   conn.close = function () {
     terminated = true;
     cycle();
   };
   
   return conn;
-}
+};
 
