@@ -283,9 +283,9 @@ exports.new_connection = function (path) {
       conn.query("INSERT INTO " +
         table + "(" + keys.join(", ") + ")" +
         " VALUES (" + values.join(", ") + ");" +
-        "SELECT last_insert_rowid() AS _id"
+        "SELECT last_insert_rowid() AS rowid"
       ).addCallback(function (result) {
-        data._id = parseInt(result[0]._id, 10);
+        data._id = parseInt(result[0].rowid, 10);
         promise.emitSuccess(data._id);
       });
     }
