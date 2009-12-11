@@ -13,7 +13,7 @@ The four backend drivers that we plan on supporting initially are:
  - **MongoDB** - A scalable, high-performance, open source, schema-free, document-oriented database.  This driver also implements the wire protocol in JavaScript and communicated with the server over TCP.
  - **JSON-DB** - A homegrown system schema-free, document-oriented database that uses simple flat files containing JSON objects.  This has no requirements at all except node and a filesystem.  Performance is to be determined once it's implemented fully.
  
-So far the PostgreSQL and Sqlite3 drivers are almost done.  The other two are still in the research/implementation stage.
+So far Sqlite3 driver is done, but returns all columns as text.  The PostgreSQL is partially done.  The other two are still in the research/implementation stage.
 
 Each backend follows the same interface.  This means that new backends can be developed by independent parties and used.
 
@@ -25,57 +25,77 @@ The error event on the connection object gets all errors from sub-events routed 
 
   - `new_connection(*connection_parameters)` - Returns a connection object. The connection parameters are driver specific.
     - `<success>` - Event fired when a connection is successfully made.  Queries can safely be made before this point, but they won't se sent to the database engine yet for obvious reasons.
-    - `<error>` - Event fired when something goes wrong in either the connection or any of the sub-methods.
+    - `<error>(reason)` - Event fired when something goes wrong in either the connection or any of the sub-methods.
     - `query(sql [, *params [, row_callback]])` - Method that queries the database.  If placeholders are used in the sql, they are filled in with the data from params.  If you wish to stream the results, pass in a callback function as the last argument
       - `<success>(data)` - Event fired when the query has returned.  Contains an array of JSON objects if a row_callback wasn't passed in to the query method.
     - `execute(sql, [*params])` - Execute arbitrary sql against the database.
       - `<success>` - Event fired if successful.
     - `save(table, data)` - Saves a row to the database.  If the id is undefined, then it's an insert, otherwise it's an update.
-      - `<success>(type)` - Event fired when done.  Type is either "insert", "update", or "upsert".  The insert id is not returned, however the passed in data object from the save command has it's ID set automatically.
-    - `delete(table, id)` - Deletes a record by id.
+      - `<success>([insert_id])` - Event fired when done.  If an insert was performed, the insert_id is returned.  Also the passed in data object from the save command has it's `_id` set automatically.
+    - `remove(table, id/data)` - Removes a record by id from the database.  Removes the `_id` if a data object is passed in.
       - `<success>` - Event fired if successful.
+    - `close()` - Close the connection to the database once the queue is empty.
+
 
 Sample Usage:
 
     var sqlite = require('./drivers/sqlite');
-    
+    var sys = require('sys');
+
     // Connect to a database
-    var db = sqlite.Connection('test.db');
+    var db = sqlite.new_connection('test2.db');
     db.addCallback(function () {
       sys.debug("Connection established");
     }).addErrback(function (reason) {
       sys.debug("Database error: " + reason);
     });
-    
+
     // Non-query example
-    db.execute("CREATE TABLE users(id serial, name text, age int)").addCallback(function () {
-      
-      for (var i = 0; i < 100; i++) {
-        db.save('users', {name: "User" + i, age: i}).
-      }
-      
-      // Buffered query
-      db.query("SELECT * FROM users").addCallback(function (data) {
-        sys.p(data);
-      });
-      
-      // Streaming query
-      db.query("SELECT * FROM users", function (row) {
-        sys.p(row)
-      }).addCallback(function () {
-        sys.debug("Done");
-      });
-      
-      // Query with positioned parameters
-      db.query("SELECT * FROM users WHERE age > ? AND age < ?", 18, 50).addCallback(sys.p);
-      
-      // Query with named parameters
-      db.query("SELECT * FROM users WHERE age > :min AND age <= :max", {min: 18, max: 50}).addCallback(sys.p);
-      
-      db.close().addCallback(function () {
-        sys.debug("Connection closed")
-      })
+    db.execute("CREATE TABLE users(name text, age int)").addCallback(function () {
+      sys.debug("Table created");
     });
+
+    var data = {name: "Test", age: 100};
+    sys.debug("Starting save: " + sys.inspect(data));
+    db.save('users', data).addCallback(function (insert_id) {
+      sys.debug("Save result: " + sys.inspect(insert_id));
+      sys.debug("data after insert: " + sys.inspect(data));
+      data.name = "Test Changed";
+      sys.debug("Saving with new value: " + sys.inspect(data));
+      db.save('users', data).addCallback(function () {
+        sys.debug("data after update: " + sys.inspect(data));
+        sys.debug("Removing from database: " + sys.inspect(data));
+        db.remove('users', data).addCallback(function () {
+          sys.debug("data after remove: " + sys.inspect(data));
+        });
+      });
+    });
+  
+    for (var i = 0; i < 10; i++) {
+      db.save('users', {name: "User" + i, age: i});
+    }
+
+    // Buffered query
+    sys.debug("Starting buffered query");
+    db.query("SELECT * FROM users").addCallback(function (data) {
+      sys.debug("buffered Done: " + sys.inspect(data));
+    });
+
+    // Streaming query
+    sys.debug("Starting streaming query");
+    db.query("SELECT * FROM users", function (row) {
+      sys.debug("streaming Row: " + sys.inspect(row));
+    }).addCallback(function () {
+      sys.debug("streaming Done");
+    });
+
+    // Query with positioned parameters
+    db.query("SELECT * FROM users WHERE age > ? AND age <= ?", 18, 50).addCallback(sys.p);
+
+    // Query with named parameters
+    db.query("SELECT * FROM users WHERE age > :min AND age <= :max", {min: 18, max: 50}).addCallback(sys.p);
+
+    db.close();
     
 
 *Note* that even though the database commands are asynchronous, the queries themselves are buffered internally in the Sqlite3 driver so we can treat the db commands as if they were synchronous..  This is probably bad practice since the PostgreSQL driver doesn't have this constraint.
