@@ -1,12 +1,22 @@
 process.mixin(require("./common"));
 
-// Connect to a database
+// Connect to a valid database
 var db = persistence.connect('sqlite', 'test.db');
-
 db.addListener('connection', function () {
-  sys.debug("Connection established");
-}).addListener('error', function (reason) {
-  sys.debug(reason);
+  good_connected = true;
+});
+db.close();
+
+// Connect to an invalid database
+db = persistence.connect('sqlite', '////');
+db.addListener('error', function (reason) {
+  bad_failed = true;
+});
+db.close();
+
+process.addListener('exit', function () {
+  assert.ok(good_connected, "good server failed to connect");
+  assert.ok(bad_failed, "bad server failed to fail");
 });
 // 
 // // Non-query example
@@ -56,4 +66,3 @@ db.addListener('connection', function () {
 // // Query with named parameters
 // db.query("SELECT * FROM users WHERE age > :min AND age <= :max", {min: 18, max: 50}).addCallback(sys.p);
 // 
-db.close();
