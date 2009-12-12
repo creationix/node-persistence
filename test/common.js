@@ -15,3 +15,5 @@ exports.fixturesDir = path.join(testDir, "fixtures");
 // preload the assert library.
 exports.assert = require('assert');
 
+// preload the persistence library.
+exports.persistence = require('persistence');
