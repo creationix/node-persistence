@@ -6,6 +6,7 @@ var db = persistence.connect('sqlite', testdb);
 var finished1 = false;
 var finished2 = false;
 var finished3 = false;
+var finished4 = false;
 
 db.query("SELECT null AS test1, 2 AS test2, 'hello' AS test3").addCallback(function (data) {
   assert.equal(data[0].test1, null);
@@ -23,10 +24,16 @@ db.query("SELECT null AS test1, 2 AS test2, 'hello' AS test3", function (row) {
   finished3 = true;
 });
 
+db.query("THIS IS INVALID SQL");
+db.addListener('error', function (reason) {
+  finished4 = true;
+});
+
 db.close();
 
 process.addListener('exit', function () {
-  assert.ok(finished1);
-  assert.ok(finished2);
-  assert.ok(finished3);
+  assert.ok(finished1, "query failed");
+  assert.ok(finished2, "stream row failed");
+  assert.ok(finished3, "stream stop failed");
+  assert.ok(finished4, "ERROR failed");
 });

@@ -2,11 +2,11 @@ process.mixin(require("./common"));
 
 // Connect to a valid database
 var db = persistence.connect('sqlite', testdb);
-db.addListener('error', debug);
 
 var finished1 = false;
 var finished2 = false;
 var finished3 = false;
+var finished4 = false;
 
 db.execute("CREATE TABLE foo(name text)").addCallback(function () {
   finished1 = true;
@@ -19,10 +19,16 @@ db.execute("CREATE TABLE foo(name text)").addCallback(function () {
   });
 });
 
+db.execute("THIS IS INVALID SQL");
+db.addListener('error', function (reason) {
+  finished4 = true;
+});
+
 db.close();
 
 process.addListener('exit', function () {
   assert.ok(finished1, "CREATE failed");
   assert.ok(finished2, "INSERT failed");
   assert.ok(finished3, "SELECT failed");
+  assert.ok(finished4, "ERROR failed");
 });
