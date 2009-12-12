@@ -17,6 +17,7 @@ exports.persistence = require('persistence');
 
 exports.testdb = "/tmp/test.db";
 
+// Make sure the database is deleted before running each test.
 var posix = require('posix');
 posix.stat(exports.testdb).addCallback(function () {
   posix.unlink(exports.testdb);
