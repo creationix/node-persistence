@@ -98,7 +98,8 @@ The supported operators are:
  - `>=` - greater than or equal to
  - `>` - greater than
  - `!=` or `<>` - not equal to
- - `~` - like - uses % in SQL and native regular expressions in the JS backends (mongodb and jsondb)
+ - `%` - like - uses % like in SQL
+ - `~` - match - takes a regular expression and matches against. (not supported in all backends)
   
 If an array of hash-objects is passed in, then each array item is grouped and ORed together.
 
