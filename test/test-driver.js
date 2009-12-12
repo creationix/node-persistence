@@ -1,3 +1,5 @@
+process.mixin(require("./common"));
+
 var sqlite = require('./drivers/sqlite2');
 var sys = require('sys');
 var assert = require('assert');

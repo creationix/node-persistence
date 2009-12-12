@@ -1,15 +1,17 @@
+// Set up some useful paths
 var path = require("path");
+var testDir = path.dirname(__filename);
+var libDir = path.join(testDir, "../lib");
 
-exports.testDir = path.dirname(__filename);
-exports.fixturesDir = path.join(exports.testDir, "fixtures");
-exports.libDir = path.join(exports.testDir, "../../lib");
+// Add our package to the front of the library path
+require.paths.unshift(libDir);
 
-require.paths.unshift(exports.libDir);
+// puts and family are nice to have
+process.mixin(exports, require("sys"));
 
-var assert = require('assert');
-var sys = require("sys");
+// store a path to the fixtures
+exports.fixturesDir = path.join(testDir, "fixtures");
 
-process.mixin(exports, sys);
+// preload the assert library.
 exports.assert = require('assert');
-exports.posix = require("posix");
-exports.path = path;
+
