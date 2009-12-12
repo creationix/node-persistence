@@ -13,9 +13,12 @@ var finished1 = false;
 var finished2 = false;
 var finished3 = false;
 var finished4 = false;
+var finished5 = false;
+var finished6 = false;
+var finished7 = false;
 
 var data = {name: "Tim", age: 27};
-
+var data3;
 // Save some data
 store.save(data).addCallback(function (id) {
   assert.equal(id, 1);
@@ -30,7 +33,6 @@ store.save(data).addCallback(function (id) {
     data.age = 28;
     store.save(data).addCallback(function (id) {
       assert.equal(id, undefined);
-      assert.equal(data.age, 28);
       finished3 = true;
 
       // Load it back to make sure it really changed.
@@ -38,8 +40,42 @@ store.save(data).addCallback(function (id) {
         assert.deepEqual(data2, data);
         finished4 = true;
       });
-      
-      
+
+      // Create another row in parallel to the last get
+      data3 = {name: "Bob", age: 105};
+      store.save(data3).addCallback(function (id) {
+        assert.equal(data3._id, id);
+        assert.equal(id, 2);
+        finished5 = true;
+        
+        //
+        store.remove(data3).addCallback(function () {
+          assert.equal(data3._id, undefined);
+          finished8 = true;
+          
+          store.each(function (row) {
+            assert.deepEqual(row, data);
+            finished6 = true;
+          }).addCallback(function () {
+            finished7 = true;
+          });
+          
+          store.all().addCallback(function (all) {
+            assert.deepEqual(all[0], data);
+            finished9 = true;
+            
+            store.nuke().addCallback(function () {
+              store.all().addCallback(function (all) {
+                assert.equal(all.length, 0);
+                finished10 = true;
+              });
+             
+            });
+          });
+
+        });
+        
+      });
 
     })
 
@@ -56,4 +92,10 @@ process.addListener('exit', function () {
   assert.ok(finished2, "GET failed");
   assert.ok(finished3, "SAVE UPDATE failed");
   assert.ok(finished4, "SAVE UPDATE verify failed");
+  assert.ok(finished5, "EACH failed");
+  assert.ok(finished6, "EACH finish failed");
+  assert.ok(finished7, "SECOND INSERT failed");
+  assert.ok(finished8, "REMOVE failed");
+  assert.ok(finished9, "ALL failed");
+  assert.ok(finished10, "NUKE failed");
 });
