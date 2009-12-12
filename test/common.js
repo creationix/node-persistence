@@ -9,11 +9,15 @@ require.paths.unshift(libDir);
 // puts and family are nice to have
 process.mixin(exports, require("sys"));
 
-// store a path to the fixtures
-exports.fixturesDir = path.join(testDir, "fixtures");
-
 // preload the assert library.
 exports.assert = require('assert');
 
 // preload the persistence library.
 exports.persistence = require('persistence');
+
+exports.testdb = "/tmp/test.db";
+
+var posix = require('posix');
+posix.stat(exports.testdb).addCallback(function () {
+  posix.unlink(exports.testdb);
+});
