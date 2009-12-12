@@ -1,21 +1,13 @@
 process.mixin(require("./common"));
 
+// Connect to a database
 var db = persistence.connect('sqlite', 'test.db');
-debug(inspect(db));
-db.close();
 
-// var sqlite = require('./drivers/sqlite2');
-// var sys = require('sys');
-// var assert = require('assert');
-// 
-// 
-// // Connect to a database
-// var db = sqlite.new_connection('test2.db');
-// db.addListener('connection', function () {
-//   sys.debug("Connection established");
-// }).addListener('error', function (reason) {
-//   sys.debug(reason);
-// });
+db.addListener('connection', function () {
+  sys.debug("Connection established");
+}).addListener('error', function (reason) {
+  sys.debug(reason);
+});
 // 
 // // Non-query example
 // db.execute("CREATE TABLE users(name text, age int)").addCallback(function () {
@@ -64,4 +56,4 @@ db.close();
 // // Query with named parameters
 // db.query("SELECT * FROM users WHERE age > :min AND age <= :max", {min: 18, max: 50}).addCallback(sys.p);
 // 
-// db.close();
+db.close();
