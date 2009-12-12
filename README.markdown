@@ -17,90 +17,98 @@ So far Sqlite3 driver is done, but returns all columns as text.  The PostgreSQL 
 
 Each backend follows the same interface.  This means that new backends can be developed by independent parties and used.
 
+See <http://github.com/creationix/node-persistence/blob/master/test_driver.js> for sample code.
+
 ### Driver API
 
-All methods return promise objects.  The meaning and parameters of the success events are specified.
+All drivers must adhere to this api so that layers build on top it will work as expected.
 
-The error event on the connection object gets all errors from sub-events routed to it automatically.  For example, if you attach an errback to the `new Connection` object, then any errors emmited by query, save, execute, or delete will be routed to it.
+#### Methods for `exports` object. (This is object returned by `require`.)
 
-  - `new_connection(*connection_parameters)` - Returns a connection object. The connection parameters are driver specific.
-    - `<connection>` - Event fired when a connection is successfully made.  Queries can safely be made before this point, but they won't se sent to the database engine yet for obvious reasons.
-    - `<error>(reason)` - Event fired when something goes wrong in either the connection or any of the sub-methods.
-    - `query(sql [, *params [, row_callback]])` - Method that queries the database.  If placeholders are used in the sql, they are filled in with the data from params.  If you wish to stream the results, pass in a callback function as the last argument
-      - `<success>(data)` - Event fired when the query has returned.  Contains an array of JSON objects if a row_callback wasn't passed in to the query method.
-    - `execute(sql, [*params])` - Execute arbitrary sql against the database.
-      - `<success>` - Event fired if successful.
-    - `save(table, data)` - Saves a row to the database.  If the id is undefined, then it's an insert, otherwise it's an update.
-      - `<success>([insert_id])` - Event fired when done.  If an insert was performed, the insert_id is returned.  Also the passed in data object from the save command has it's `_id` set automatically.
-    - `remove(table, id/data)` - Removes a record by id from the database.  Removes the `_id` if a data object is passed in.
-      - `<success>` - Event fired if successful.
-    - `close()` - Close the connection to the database once the queue is empty.
+ - `new_connection(*connection_parameters)` - Returns a connection object. The connection parameters are driver specific.
 
+   `<connection>` - Event fired when a connection is successfully made.  Queries can safely be made before this point, but they won't se sent to the database engine yet for obvious reasons.
 
-Sample Usage:
+   `<error>(reason)` - Event fired when something goes wrong in either the connection or any of the sub-methods.
+   
+#### Methods for `connection` objects
 
-    var sqlite = require('./drivers/sqlite');
-    var sys = require('sys');
+*NOTE* - `query` and `execute` are only required for drivers to a SQL based relational database.
 
-    // Connect to a database
-    var db = sqlite.new_connection('test.db');
-    db.addListener('connection', function () {
-      sys.debug("Connection established");
-    }).addListener('error', function (reason) {
-      sys.debug("Database error: " + reason);
-    });
+ - `query(sql [, *params [, row_callback]])` - Method that queries the database using raw sql.  If placeholders are used in the sql, they are filled in with the data from params.  If you wish to stream the results, pass in a callback function as the last argument.  Note that this may not give correct data types for some backends (sqlite for now)
 
-    // Non-query example
-    db.execute("CREATE TABLE users(name text, age int)").addCallback(function () {
-      sys.debug("Table created");
-    });
+   `<success>(data)` - Event fired when the query has returned.  Contains an array of JSON objects if a row_callback wasn't passed in to the query method.
 
-    var data = {name: "Test", age: 100};
-    sys.debug("Starting save: " + sys.inspect(data));
-    db.save('users', data).addCallback(function (insert_id) {
-      sys.debug("Save result: " + sys.inspect(insert_id));
-      sys.debug("data after insert: " + sys.inspect(data));
-      data.name = "Test Changed";
-      sys.debug("Saving with new value: " + sys.inspect(data));
-      db.save('users', data).addCallback(function () {
-        sys.debug("data after update: " + sys.inspect(data));
-        sys.debug("Removing from database: " + sys.inspect(data));
-        db.remove('users', data).addCallback(function () {
-          sys.debug("data after remove: " + sys.inspect(data));
-        });
-      });
-    });
+ - `execute(sql, [*params])` - Execute arbitrary sql against the database.
+
+   `<success>` - Event fired if successful.
+
+ - `close()` - Close the connection to the database once the queue is empty.
+ 
+ - `get_store(name[, columns])` - Returns a new `store` object that's named `name` in the database.  Optionally specify the columns and types for this store.  Required for relational tables that don't exist yet.  This method will create the table/store if it doesn't exist yet.
+
+#### Methods for `store` objects
+
+ - `get(id)` - Get a record by id.
+
+   `<success>(row)` - Returns the data row.
+
+ - `find(condition[, row_callback])` - Finds records in table filtered by `condition`.  Condition can either be a function that returns true or false for each row or a `condition` expression (See `condition` expressions below) for logic in the database engine.  If row callback is passed in the results will stream.
+
+   `<success>(data)` - Event fired when the stream is done. if there was no row_callback we now pass the entire result set.
+
+ - `each(row_callback)` - Go through each row calling row callback.
+
+   `<success>` - Event fired when the stream is done.
+
+ - `all()` - Load all data for a single table.
+
+   `<success>(data)` - Event fired when the data is ready.
+
+ - `save(data)` - Saves a row to the database.  If the id is undefined, then it's an insert, otherwise it's an update.
+
+   `<success>([insert_id])` - Event fired when done.  If an insert was performed, the insert_id is returned.  Also the passed in data object from the save command has it's `_id` set automatically.
+
+ - `remove(id/data)` - Removes a record by id from the database.  Removes the `_id` if a data object is passed in.
+
+   `<success>` - Event fired if successful.
+
+ - `nuke()` - Remove all entries in a table.
+
+   `<success>` - Event fired if successful.
+
+#### Structure of `condition` expressions.
+
+A simple condition is pairs of key's and values.  This builds a condition where all columns named by the key must equal the corresponding value.
+
+This matches rows where `name` is `"Tim"` and `age` is `27`:
+
+    {name: "Tim", age: 27}
+
+If an array of hash-objects is passed in, then each array item is grouped and ORed together.
+
+This matches `name` is `"Tim"` or `age` < `8`:
+
+    [{name: "Tim"}, {age: 8}]
+
+If a key contains space, then the operator after it is used instead of equal.
+
+This matches rows where `age` is greater than `18` and `age` is less than `50`:
+
+    {"age >": 18, "age <": 50}
+
+The supported operators are:
+
+ - `<` - less than
+ - `<=` - less than or equal to
+ - `>=` - greater than or equal to
+ - `>` - greater than
+ - `!=` or `<>` - not equal to
+ - `~` - like - uses % in SQL and native regular expressions in the JS backends (mongodb and jsondb)
   
-    for (var i = 0; i < 10; i++) {
-      db.save('users', {name: "User" + i, age: i});
-    }
-
-    // Buffered query
-    sys.debug("Starting buffered query");
-    db.query("SELECT * FROM users").addCallback(function (data) {
-      sys.debug("buffered Done: " + sys.inspect(data));
-    });
-
-    // Streaming query
-    sys.debug("Starting streaming query");
-    db.query("SELECT * FROM users", function (row) {
-      sys.debug("streaming Row: " + sys.inspect(row));
-    }).addCallback(function () {
-      sys.debug("streaming Done");
-    });
-
-    // Query with positioned parameters
-    db.query("SELECT * FROM users WHERE age > ? AND age <= ?", 18, 50).addCallback(sys.p);
-
-    // Query with named parameters
-    db.query("SELECT * FROM users WHERE age > :min AND age <= :max", {min: 18, max: 50}).addCallback(sys.p);
-
-    db.close();
-    
-
-*Note* that even though the database commands are asynchronous, the queries themselves are buffered internally in the Sqlite3 driver so we can treat the db commands as if they were synchronous..  This is probably bad practice since the PostgreSQL driver doesn't have this constraint.
-
 ## Object Mapper
+
+**THIS SECTION IS STILL UNDER HEAVY CONSTRUCTION**
 
 This is an API layer in spirit to ActiveRecord or DataMapper, but not as closely tied to relational databases and of course designed for Node.
 
