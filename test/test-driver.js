@@ -1,12 +1,14 @@
-var sqlite = require('./drivers/sqlite');
+var sqlite = require('./drivers/sqlite2');
 var sys = require('sys');
+var assert = require('assert');
+
 
 // Connect to a database
-var db = sqlite.new_connection('test.db');
+var db = sqlite.new_connection('test2.db');
 db.addListener('connection', function () {
   sys.debug("Connection established");
 }).addListener('error', function (reason) {
-  sys.debug("Database error: " + reason);
+  sys.debug(reason);
 });
 
 // Non-query example
@@ -14,24 +16,26 @@ db.execute("CREATE TABLE users(name text, age int)").addCallback(function () {
   sys.debug("Table created");
 });
 
+var store = db.get_store('users');
+
 var data = {name: "Test", age: 100};
 sys.debug("Starting save: " + sys.inspect(data));
-db.save('users', data).addCallback(function (insert_id) {
+store.save(data).addCallback(function (insert_id) {
   sys.debug("Save result: " + sys.inspect(insert_id));
   sys.debug("data after insert: " + sys.inspect(data));
   data.name = "Test Changed";
   sys.debug("Saving with new value: " + sys.inspect(data));
-  db.save('users', data).addCallback(function () {
+  store.save(data).addCallback(function () {
     sys.debug("data after update: " + sys.inspect(data));
     sys.debug("Removing from database: " + sys.inspect(data));
-    db.remove('users', data).addCallback(function () {
+    store.remove(data).addCallback(function () {
       sys.debug("data after remove: " + sys.inspect(data));
     });
   });
 });
   
 for (var i = 0; i < 10; i++) {
-  db.save('users', {name: "User" + i, age: i});
+  store.save({name: "User" + i, age: i});
 }
 
 // Buffered query

@@ -25,13 +25,13 @@ All drivers must adhere to this api so that layers build on top it will work as 
 
 #### Methods for `exports` object. (This is object returned by `require`.)
 
- - `new_connection(*connection_parameters)` - Returns a connection object. The connection parameters are driver specific.
+ - `new_connection(*connection_parameters)` - Returns a new `Connection` object. The connection parameters are driver specific.
 
    `<connection>` - Event fired when a connection is successfully made.  Queries can safely be made before this point, but they won't se sent to the database engine yet for obvious reasons.
 
    `<error>(reason)` - Event fired when something goes wrong in either the connection or any of the sub-methods.
    
-#### Methods for `connection` objects
+#### Methods for `Connection` objects
 
 *NOTE* - `query` and `execute` are only required for drivers to a SQL based relational database.
 
@@ -45,9 +45,9 @@ All drivers must adhere to this api so that layers build on top it will work as 
 
  - `close()` - Close the connection to the database once the queue is empty.
  
- - `get_store(name[, columns])` - Returns a new `store` object that's named `name` in the database.  Optionally specify the columns and types for this store.  Required for relational tables that don't exist yet.  This method will create the table/store if it doesn't exist yet.
+ - `get_store(name[, columns])` - Returns a new `Store` object that's named `name` in the database.  Optionally specify the columns and types for this store.  Required for relational tables that don't exist yet.  This method will create the table/store if it doesn't exist yet.
 
-#### Methods for `store` objects
+#### Methods for `Store` objects
 
  - `get(id)` - Get a record by id.
 
@@ -85,12 +85,6 @@ This matches rows where `name` is `"Tim"` and `age` is `27`:
 
     {name: "Tim", age: 27}
 
-If an array of hash-objects is passed in, then each array item is grouped and ORed together.
-
-This matches `name` is `"Tim"` or `age` < `8`:
-
-    [{name: "Tim"}, {age: 8}]
-
 If a key contains space, then the operator after it is used instead of equal.
 
 This matches rows where `age` is greater than `18` and `age` is less than `50`:
@@ -106,6 +100,12 @@ The supported operators are:
  - `!=` or `<>` - not equal to
  - `~` - like - uses % in SQL and native regular expressions in the JS backends (mongodb and jsondb)
   
+If an array of hash-objects is passed in, then each array item is grouped and ORed together.
+
+This matches `name` is `"Tim"` or `age` < `8`:
+
+    [{name: "Tim"}, {"age <": 8}]
+
 ## Object Mapper
 
 **THIS SECTION IS STILL UNDER HEAVY CONSTRUCTION**
