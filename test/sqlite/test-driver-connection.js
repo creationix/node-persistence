@@ -1,4 +1,4 @@
-process.mixin(require("./common"));
+process.mixin(require("../common"));
 
 var good_connected = false,
     bad_failed = false,

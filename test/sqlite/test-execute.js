@@ -1,4 +1,4 @@
-process.mixin(require("./common"));
+process.mixin(require("../common"));
 
 // Connect to a valid database
 var db = persistence.connect('sqlite', testdb);

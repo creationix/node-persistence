@@ -7,7 +7,7 @@ var commands = {
   },
   test: function () {
     puts("Running tests:");
-    exec("ls test/test-*.js | xargs -L 1 /usr/local/bin/node").addCallback(function (stdout, stderr) {
+    exec("ls test/**/test-*.js | xargs -L 1 /usr/local/bin/node").addCallback(function (stdout, stderr) {
       puts("All tests pass");
     }).addErrback(function (exit_code, stdout, stderr) {
       puts(stdout);
