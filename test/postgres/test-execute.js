@@ -1,15 +1,11 @@
 process.mixin(require("../common"));
-
-// Connect to a valid database
-db = persistence.connect('postgres', configs.postgres);
-
 var finished1 = false;
 var finished2 = false;
 var finished3 = false;
 var finished4 = false;
 
-// TODO: Find a clean way to clean the slate every start in common.js
-db.execute("DROP TABLE foo").addCallback(function () {
+before("postgres").addCallback(function (db) {
+
   db.execute("CREATE TABLE foo(name text)").addCallback(function () {
     finished1 = true;
     db.execute("INSERT INTO foo(name) VALUES ('Hello')").addCallback(function () {
@@ -20,14 +16,13 @@ db.execute("DROP TABLE foo").addCallback(function () {
       });
     });
   });
-});
 
-db.execute("THIS IS INVALID SQL");
-db.addListener('error', function (reason) {
-  finished4 = true;
-});
+  db.execute("THIS IS INVALID SQL");
+  db.addListener('error', function (reason) {
+    finished4 = true;
+  });
 
-db.close();
+});
 
 process.addListener('exit', function () {
   assert.ok(finished1, "CREATE failed");

@@ -26,8 +26,8 @@ exports.configs = {
 };
 
 var before_execs = {
-  postgres: "dropdb " + exports.configs.postgres.database + "; createdb -O " + exports.configs.postgres.username + " " + exports.configs.postgres.database,
-  sqlite: "rm " + exports.configs.sqlite
+  postgres: "/usr/local/bin/dropdb " + exports.configs.postgres.database + "; /usr/local/bin/createdb -O " + exports.configs.postgres.username + " " + exports.configs.postgres.database,
+  sqlite: "rm -f " + exports.configs.sqlite
 }
 
 // Call these before each test to clean the slate
@@ -40,13 +40,7 @@ exports.before = function (type) {
       db.close();
     });
   }
-  // Make sure the postgres database is clean too.
-  
-  
-  exports.exec(before_execs[type]).addCallback(function () {
-    debug("Cleaned " + type + " environment.");
-    done();
-  }).addErrback(function () {
+  exports.exec(before_execs[type]).addCallback(done).addErrback(function () {
     debug(arguments[2]);
     done();
   });
