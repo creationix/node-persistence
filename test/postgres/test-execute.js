@@ -8,13 +8,16 @@ var finished2 = false;
 var finished3 = false;
 var finished4 = false;
 
-db.execute("CREATE TABLE foo(name text)").addCallback(function () {
-  finished1 = true;
-  db.execute("INSERT INTO foo(name) VALUES ('Hello')").addCallback(function () {
-    finished2 = true;
-    db.query("SELECT * FROM foo").addCallback(function (data) {
-      finished3 = true;
-      assert.equal(data[0].name, 'Hello');
+// TODO: Find a clean way to clean the slate every start in common.js
+db.execute("DROP TABLE foo").addCallback(function () {
+  db.execute("CREATE TABLE foo(name text)").addCallback(function () {
+    finished1 = true;
+    db.execute("INSERT INTO foo(name) VALUES ('Hello')").addCallback(function () {
+      finished2 = true;
+      db.query("SELECT * FROM foo").addCallback(function (data) {
+        finished3 = true;
+        assert.equal(data[0].name, 'Hello');
+      });
     });
   });
 });
