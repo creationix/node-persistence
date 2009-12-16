@@ -2,21 +2,22 @@ process.mixin(require("../common"));
 
 var good_connected = false,
     bad_failed = false,
-    db;
+    db2;
 
-// Connect to a valid database
-db = persistence.connect('sqlite', configs.sqlite);
-db.addListener('connection', function () {
-  good_connected = true;
+before("sqlite").addCallback(function (db) {
+
+  db.addListener('connection', function () {
+    good_connected = true;
+  });
+
 });
-db.close();
 
 // Connect to an invalid database
-db = persistence.connect('sqlite', '////');
-db.addListener('error', function (reason) {
+db2 = persistence.connect('sqlite', '////');
+db2.addListener('error', function (reason) {
   bad_failed = true;
 });
-db.close();
+db2.close();
 
 process.addListener('exit', function () {
   assert.ok(good_connected, "good server failed to connect");

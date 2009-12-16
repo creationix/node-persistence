@@ -25,8 +25,31 @@ exports.configs = {
   }
 };
 
-// Make sure the database is deleted before running each test.
-var posix = require('posix');
-posix.stat(exports.configs.sqlite).addCallback(function () {
-  posix.unlink(exports.configs.sqlite);
-});
+var before_execs = {
+  postgres: "dropdb " + exports.configs.postgres.database + "; createdb -O " + exports.configs.postgres.username + " " + exports.configs.postgres.database,
+  sqlite: "rm " + exports.configs.sqlite
+}
+
+// Call these before each test to clean the slate
+exports.before = function (type) {
+  var promise = new process.Promise();
+  var done = function () {
+    db = exports.persistence.connect(type, configs[type])
+    promise.emitSuccess(db);
+    setTimeout(function () {
+      db.close();
+    });
+  }
+  // Make sure the postgres database is clean too.
+  
+  
+  exports.exec(before_execs[type]).addCallback(function () {
+    debug("Cleaned " + type + " environment.");
+    done();
+  }).addErrback(function () {
+    debug(arguments[2]);
+    done();
+  });
+  return promise;
+};
+  

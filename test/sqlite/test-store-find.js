@@ -1,27 +1,6 @@
 process.mixin(require("../common"));
-
-// Connect to a valid database
-var db = persistence.connect('sqlite', configs.sqlite);
-db.addListener('error', debug);
-
 var finished1 = false;
 var finished_array = {};
-
-var store = db.get_store("foo", {
-  name: String,
-  age: Number
-});
- 
-for (var i = 0; i < 100; i++) {
-  store.save({name: "USER " + i, age: i});
-  store.save({name: "User " + i, age: i});
-}
-
-store.all().addCallback(function (data) {
-  assert.equal(data.length, 200);
-  finished1 = true;
-});
-
 var queries = [
   [{age: 50}, 2],
   [{"age =": 50}, 2],
@@ -44,22 +23,41 @@ var queries = [
   [[], 200]
 ];
 
-queries.forEach(function (pair, i) {
-  store.find(pair[0]).addCallback(function (data) {
-    if (i === 0) {
-      assert.equal(data[0].age, 50);
-    }
-    assert.equal(
-      data.length, pair[1],
-      JSON.stringify(pair[0]) +
-        ": expected " + pair[1] + " rows, but found " + data.length
-    );
-    finished_array[i] = true;
+before("sqlite").addCallback(function (db) {
+
+  db.addListener('error', debug);
+
+  var store = db.get_store("foo", {
+    name: String,
+    age: Number
   });
+ 
+  for (var i = 0; i < 100; i++) {
+    store.save({name: "USER " + i, age: i});
+    store.save({name: "User " + i, age: i});
+  }
+
+  store.all().addCallback(function (data) {
+    assert.equal(data.length, 200);
+    finished1 = true;
+  });
+
+
+  queries.forEach(function (pair, i) {
+    store.find(pair[0]).addCallback(function (data) {
+      if (i === 0) {
+        assert.equal(data[0].age, 50);
+      }
+      assert.equal(
+        data.length, pair[1],
+        JSON.stringify(pair[0]) +
+          ": expected " + pair[1] + " rows, but found " + data.length
+      );
+      finished_array[i] = true;
+    });
+  });
+
 });
-
-
-db.close();
 
 process.addListener('exit', function () {
   assert.ok(finished1, "ALL failed");
