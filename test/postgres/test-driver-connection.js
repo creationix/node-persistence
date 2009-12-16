@@ -12,7 +12,7 @@ db.addListener('connection', function () {
 db.close();
 
 // Connect to an invalid database
-db = persistence.connect('postgres', {});
+db = persistence.connect('postgres', {invalid: "Stuff"});
 db.addListener('error', function (reason) {
   bad_failed = true;
 });
