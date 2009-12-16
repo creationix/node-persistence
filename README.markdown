@@ -13,7 +13,7 @@ The four backend drivers that we plan on supporting initially are:
  - **MongoDB** - A scalable, high-performance, open source, schema-free, document-oriented database.  This driver also implements the wire protocol in JavaScript and communicated with the server over TCP.
  - **JSON-DB** - A homegrown system schema-free, document-oriented database that uses simple flat files containing JSON objects.  This has no requirements at all except node and a filesystem.  Performance is to be determined once it's implemented fully.
  
-So far Sqlite3 driver is done, but returns all columns as text.  The PostgreSQL is partially done.  The other two are still in the research/implementation stage.
+So far Sqlite3 driver is done, but returns all columns as text.  The PostgreSQL is also done and needing some field testing.  The other two are still in the research/implementation stage.
 
 Each backend follows the same interface.  This means that new backends can be developed by independent parties and used.
 
