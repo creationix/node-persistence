@@ -1,7 +1,7 @@
 process.mixin(require("../common"));
 
 // Connect to a valid database
-var db = persistence.connect('sqlite', testdb);
+var db = persistence.connect('sqlite', configs.sqlite);
 db.addListener('error', debug);
 
 var store = db.get_store("foo", {

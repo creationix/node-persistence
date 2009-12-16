@@ -5,7 +5,7 @@ var good_connected = false,
     db;
 
 // Connect to a valid database
-db = persistence.connect('sqlite', testdb);
+db = persistence.connect('sqlite', configs.sqlite);
 db.addListener('connection', function () {
   good_connected = true;
 });

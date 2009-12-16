@@ -1,6 +1,6 @@
 process.mixin(require("../common"));
 
-var db = persistence.connect('sqlite', testdb);
+var db = persistence.connect('sqlite', configs.sqlite);
 
 // Check that the db connection has the required methods
 ["query", "execute", "get_store", "close"].forEach(function (method_name) {

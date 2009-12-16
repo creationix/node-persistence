@@ -15,10 +15,18 @@ exports.assert = require('assert');
 // preload the persistence library.
 exports.persistence = require('persistence');
 
-exports.testdb = "/tmp/test.db";
+exports.configs = {
+  sqlite: "/tmp/test.db",
+  postgres: {
+    host: "localhost",
+    database: "test",
+    username: "test",
+    password: "password"
+  }
+};
 
 // Make sure the database is deleted before running each test.
 var posix = require('posix');
-posix.stat(exports.testdb).addCallback(function () {
-  posix.unlink(exports.testdb);
+posix.stat(exports.configs.sqlite).addCallback(function () {
+  posix.unlink(exports.configs.sqlite);
 });
