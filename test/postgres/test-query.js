@@ -21,6 +21,7 @@ db.query("SELECT null AS test1, 2 AS test2, 'hello' AS test3", function (row) {
   assert.equal(row.test3, 'hello');
   finished2 = true;
 }).addCallback(function () {
+  assert.equal(arguments.length, 0, "Streaming queries shouldn't return buffered results");
   finished3 = true;
 });
 
