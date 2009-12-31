@@ -1,16 +1,9 @@
 process.mixin(require('sys'));
-var Persistance = require('./persistance');
+var persistence = require('../lib/persistence');
+var sqlite = require('../lib/persistence/sqlite');
 
-var db;
-// Can use a mongodb server as the backend
-db = new Persistance.Backend('mongodb://localhost/blog');
-// Can use a postgres server as the backend
-db = new Persistance.Backend('postgresql://user:pass@localhost:5432/blog');
-
-// Can use a sqlite database file
-db = new Persistance.Backend('sqlite://blog.db');
-// Can store data in folder with flat json files
-db = new Persistance.Backend('jsondb://blog_data');
+// Connect to a sqlite driver and create a Backend object from it.
+var db = new persistence.Backend(sqlite.new_connection('test.db'));
 
 // Notice that comments don't have a table name.  They don't have standalone
 // entries in the database.
