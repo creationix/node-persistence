@@ -13,7 +13,7 @@ before("sqlite").addCallback(function (db) {
 });
 
 // Connect to an invalid database
-db2 = persistence.connect('sqlite', '////');
+db2 = connect('sqlite', '////');
 db2.addListener('error', function (reason) {
   bad_failed = true;
 });
