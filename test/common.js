@@ -10,7 +10,8 @@ require.paths.unshift(libDir);
 var backends = {
   postgres: require('persistence/postgres'),
   sqlite: require('persistence/sqlite'),
-  jsondb: require('persistence/jsondb')
+  jsondb: require('persistence/jsondb'),
+  memory: require('persistence/memory')
 };
 
 function connect(driver/*, *args */) {
@@ -32,6 +33,9 @@ function connect(driver/*, *args */) {
   case 'json':
   case 'jsondb':
     path = 'jsondb';
+    break;
+  case 'memory':
+    path = 'memory';
     break;
   default:
     throw "Unknown driver: " + driver;
@@ -70,16 +74,22 @@ var before_execs = {
 exports.before = function (type) {
   var promise = new process.Promise();
   var done = function () {
-    db = connect(type, configs[type])
+    db = connect(type, configs[type]);
     promise.emitSuccess(db);
     setTimeout(function () {
       db.close();
     });
   }
-  exports.exec(before_execs[type]).addCallback(done).addErrback(function () {
-    debug(arguments[2]);
-    done();
-  });
+  if (before_execs[type]) {
+    exports.exec(before_execs[type]).addCallback(done).addErrback(function () {
+      debug(arguments[2]);
+      done();
+    });
+  } else {
+    setTimeout(function () {
+      done();
+    });
+  }
   return promise;
 };
   
