@@ -28,21 +28,21 @@ All drivers must adhere to this api so that layers build on top it will work as 
 
  - `new_connection(*connection_parameters)` - Returns a new `Connection` object. The connection parameters are driver specific.
 
-   `<connection>` - Event fired when a connection is successfully made.  Queries can safely be made before this point, but they won't se sent to the database engine yet for obvious reasons.
+   `<connection>` - Callback fired when a connection is successfully made.  Queries can safely be made before this point, but they won't se sent to the database engine yet for obvious reasons.
 
-   `<error>(reason)` - Event fired when something goes wrong in either the connection or any of the sub-methods.
+   `<error>(reason)` - Callback fired when something goes wrong in either the connection or any of the sub-methods.
    
 #### Methods for `Connection` objects
 
 *NOTE* - `query` and `execute` are only required for drivers to a SQL based relational database.
 
- - `query(sql [, *params [, row_callback]])` - Method that queries the database using raw sql.  If placeholders are used in the sql, they are filled in with the data from params.  If you wish to stream the results, pass in a callback function as the last argument.  Note that this may not give correct data types for some backends (sqlite for now)
+ - `query(sql [, *params [, row_callback]], callback)` - Method that queries the database using raw sql.  If placeholders are used in the sql, they are filled in with the data from params.  If you wish to stream the results, pass in a callback function as the last argument.  Note that this may not give correct data types for some backends (sqlite for now)
 
-   `<success>(data)` - Event fired when the query has returned.  Contains an array of JSON objects if a row_callback wasn't passed in to the query method.
+   `callback(data)` - Callback fired when the query has returned.  Contains an array of JSON objects if a row_callback wasn't passed in to the query method.
 
- - `execute(sql, [*params])` - Execute arbitrary sql against the database.
+ - `execute(sql, [*params], callback)` - Execute arbitrary sql against the database.
 
-   `<success>` - Event fired if successful.
+   `callback()` - Callback fired if successful.
 
  - `close()` - Close the connection to the database once the queue is empty.
  
@@ -50,33 +50,33 @@ All drivers must adhere to this api so that layers build on top it will work as 
 
 #### Methods for `Store` objects
 
- - `get(id)` - Get a record by id.
+ - `get(id, callback)` - Get a record by id.
 
-   `<success>(row)` - Returns the data row.
+   `callback(row)` - Returns the data row.
 
- - `find(condition[, row_callback])` - Finds records in table filtered by `condition`.  Condition can either be a function that returns true or false for each row or a `condition` expression (See `condition` expressions below) for logic in the database engine.  If row callback is passed in the results will stream.
+ - `find(condition[, row_callback], callback)` - Finds records in table filtered by `condition`.  Condition can either be a function that returns true or false for each row or a `condition` expression (See `condition` expressions below) for logic in the database engine.  If row callback is passed in the results will stream.
 
-   `<success>(data)` - Event fired when the stream is done. if there was no row_callback we now pass the entire result set.
+   `callback(data)` - Callback fired when the stream is done. if there was no row_callback we now pass the entire result set.
 
- - `each(row_callback)` - Go through each row calling row callback.
+ - `each(row_callback, callback)` - Go through each row calling row callback.
 
-   `<success>` - Event fired when the stream is done.
+   `callback()` - Callback fired when the stream is done.
 
- - `all()` - Load all data for a single table.
+ - `all(callback)` - Load all data for a single table.
 
-   `<success>(data)` - Event fired when the data is ready.
+   `callback(data)` - Callback fired when the data is ready.
 
- - `save(data)` - Saves a row to the database.  If the id is undefined, then it's an insert, otherwise it's an update.
+ - `save(data, callback)` - Saves a row to the database.  If the id is undefined, then it's an insert, otherwise it's an update.
 
-   `<success>([insert_id])` - Event fired when done.  If an insert was performed, the insert_id is returned.  Also the passed in data object from the save command has it's `_id` set automatically.
+   `callback([insert_id])` - Callback fired when done.  If an insert was performed, the insert_id is returned.  Also the passed in data object from the save command has it's `_id` set automatically.
 
- - `remove(id/data)` - Removes a record by id from the database.  Removes the `_id` if a data object is passed in.
+ - `remove(id/data, callback)` - Removes a record by id from the database.  Removes the `_id` if a data object is passed in.
 
-   `<success>` - Event fired if successful.
+   `callback()` - Callback fired if successful.
 
- - `nuke()` - Remove all entries in a table.
+ - `nuke(callback)` - Remove all entries in a table.
 
-   `<success>` - Event fired if successful.
+   `callback()` - Callback fired if successful.
 
 #### Structure of `condition` expressions.
 
@@ -108,68 +108,3 @@ This matches `name` is `"Tim"` or `age` < `8`:
 
     [{name: "Tim"}, {"age <": 8}]
 
-## Object Mapper
-
-**THIS SECTION IS STILL UNDER HEAVY CONSTRUCTION**
-
-This is an API layer in spirit to ActiveRecord or DataMapper, but not as closely tied to relational databases and of course designed for Node.
-
-The following is some initial ideas about the syntax and api, it's subject to change:
-
-    var db;
-    // Can use a mongodb server as the backend
-    db = new Persistance.Backend('mongodb://localhost/blog');
-    // Can use a postgres server as the backend
-    db = new Persistance.Backend('postgresql://user:pass@localhost:5432/blog');
-
-    // Can use a sqlite database file
-    db = new Persistance.Backend('sqlite://blog.db');
-    // Can store data in folder with flat json files
-    db = new Persistance.Backend('jsondb://blog_data');
-
-    // Notice that comments don't have a table name.  They don't have standalone
-    // entries in the database.
-    var Comment = db.define({
-      "posted_by": String,
-      "created_at": Date,
-      "email": String,
-      "url": String,
-      "body": String
-    });
-
-    // Post has a collection/table called "posts" and it embeds the Comment objects.
-    var Post = db.define('posts', {
-      "title": String,
-      "body": String,
-      "created_at": Date,
-      // comments are an embedded array within the posts
-      "comments": [Comment],
-      // tags are a simple inline array
-      "tags": [String]
-    });
-
-    // In a relational database this normally requires 4 tables, but in document
-    // systems like mongodb, this only needs 1 collection.
-
-    // Create a new in-memory object
-    var welcome = new Post({
-      title: "Welcome to my node based blog",
-      body: "This is a really cool system, you should use it",
-      created_at: new Date(),
-      tags: ["node", "mongo", "persistance"]
-    });
-
-    // Save the data to the database (Creating collections/tables as needed)
-    welcome.save();
-
-    // Lets create a Comment object and add it to the post.
-    welcome.comments.push(new Comment({
-      posted_by: "Tim Caswell",
-      created_at: new Date(),
-      email: "tim@creationix.com",
-      url: "http://creationix.com/",
-      body: "What a cool blog idea!",
-    }));
-
-    // This will update the entry for the welcome post.
-    welcome.save();

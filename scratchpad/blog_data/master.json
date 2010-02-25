@@ -1,6 +1,0 @@
-{
-  "tables": {
-    "person": "people.table",
-    "vehicle": "vehicles.table"
-  }
-}

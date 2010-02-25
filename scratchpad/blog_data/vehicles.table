@@ -1,9 +1,0 @@
-{
-  "data": {
-    "car": {"make": "Scion", "model": "Xa", "year": 2005, "drivers": ["tim", "miranda"]},
-    "scooter": {"make": "Piaggio", "model": "MP3", "year": 2009, "drivers": ["tim"], "weight": 487}
-  },
-  "indexes": {
-    "make": "vehicle.make.index"
-  }
-}

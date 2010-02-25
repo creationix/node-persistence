@@ -46,8 +46,6 @@ process.mixin(exports, require("sys"));
 // preload the assert library.
 exports.assert = require('assert');
 
-// preload the persistence library.
-exports.persistence = require('persistence');
 
 exports.configs = {
   sqlite: "/tmp/test.db",

@@ -7,12 +7,13 @@ var commands = {
   },
   test: function () {
     puts("Running tests:");
-    exec("ls test/**/test-*.js | xargs -L 1 /usr/local/bin/node").addCallback(function (stdout, stderr) {
-      puts("All tests pass");
-    }).addErrback(function (exit_code, stdout, stderr) {
-      puts(stdout);
-      error(stderr);
-    });
+    exec("ls test/sqlite/test-*.js | xargs -L 1 /usr/local/bin/node", function (error, stdout, stderr){
+      if (error) {
+        throw(error);
+      } else {
+        puts("All tests pass");
+      }
+    })
   }
 };
 
