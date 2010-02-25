@@ -4,7 +4,7 @@ var good_connected = false,
     bad_failed = false,
     db2;
 
-before("postgres").addCallback(function (db) {
+before("postgres", function (db) {
 
   db.addListener('connection', function () {
     good_connected = true;
@@ -13,7 +13,7 @@ before("postgres").addCallback(function (db) {
 });
 
 // Connect to an invalid database
-db2 = persistence.connect('postgres', {invalid: "Stuff"});
+db2 = connect('postgres', {invalid: "Stuff"});
 db2.addListener('error', function (reason) {
   bad_failed = true;
 });

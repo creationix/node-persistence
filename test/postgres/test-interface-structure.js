@@ -1,6 +1,6 @@
 process.mixin(require("../common"));
 
-before("postgres").addCallback(function (db) {
+before("postgres", function (db) {
 
   // Check that the db connection has the required methods
   ["query", "execute", "get_store", "close"].forEach(function (method_name) {

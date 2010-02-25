@@ -4,13 +4,13 @@ var finished2 = false;
 var finished3 = false;
 var finished4 = false;
 
-before("postgres").addCallback(function (db) {
+before("postgres", function (db) {
 
-  db.execute("CREATE TABLE foo(name text)").addCallback(function () {
+  db.execute("CREATE TABLE foo(name text)", function () {
     finished1 = true;
-    db.execute("INSERT INTO foo(name) VALUES ('Hello')").addCallback(function () {
+    db.execute("INSERT INTO foo(name) VALUES ('Hello')", function () {
       finished2 = true;
-      db.query("SELECT * FROM foo").addCallback(function (data) {
+      db.query("SELECT * FROM foo", function (data) {
         finished3 = true;
         assert.equal(data[0].name, 'Hello');
       });
