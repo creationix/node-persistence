@@ -31,7 +31,7 @@ exports.configs = {
     username: "test",
     password: "password"
   },
-  memory: "/tmp/test"
+  memory: "/tmp/test.json"
 };
 
 // Alias process.nextTick
@@ -39,7 +39,8 @@ var defer = exports.defer = process.nextTick;
 
 var before_execs = {
   postgres: "/usr/local/bin/dropdb " + exports.configs.postgres.database + "; /usr/local/bin/createdb -O " + exports.configs.postgres.username + " " + exports.configs.postgres.database,
-  sqlite: "rm -f " + exports.configs.sqlite
+  sqlite: "rm -f " + exports.configs.sqlite,
+  memory: "rm -f " + exports.configs.memory
 }
 
 // Call these before each test to clean the slate
