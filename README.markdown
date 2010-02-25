@@ -10,12 +10,8 @@ The four backend drivers that we plan on supporting initially are:
 
  - **PostgreSQL** - An enterprise level relational database.  The driver is implemented in pure JavaScript and communicates over TCP using the PostgreSQL wire protocol.
  - **Sqlite3** - A simple, fast, server-less relational database.  This driver is a wrapper around the command-line `sqlite3` program.  It requires `sqlite3` to be in the path.  The communication is extremely fast, but types aren't very precise.  There are only strings and nulls returned.
- - **MongoDB** - A scalable, high-performance, open source, schema-free, document-oriented database.  This driver also implements the wire protocol in JavaScript and communicated with the server over TCP.
- - **JSON-DB** - A homegrown system schema-free, document-oriented database that uses simple flat files containing JSON objects.  This has no requirements at all except node and a filesystem.  Performance is to be determined once it's implemented fully.
- - **Memory** - A simple in-memory javascript array.  Extremely fast, but not really persistent. Good for temporary stuff to go along with persistent data.
+ - **Memory** - A simple in-memory javascript array object.  You can optionally have it persist to a JSON file on the filesystem.  This will periodically write to the disk after changes and on shutdown.  This is very fast and simple for small scale stuff.  No dependencies at all.
  
-So far Sqlite3 driver is done, but returns all columns as text.  The PostgreSQL is also done and needing some field testing.  The memory driver is implemented as well. The other two are still in the research/implementation stage.
-
 Each backend follows the same interface.  This means that new backends can be developed by independent parties and used.
 
 See <http://github.com/creationix/node-persistence/blob/master/test_driver.js> for sample code.
