@@ -108,3 +108,8 @@ This matches `name` is `"Tim"` or `age` < `8`:
 
     [{name: "Tim"}, {"age <": 8}]
 
+## License
+
+node-persistence is [licensed][] under the [MIT license][].
+
+[MIT license]: http://creativecommons.org/licenses/MIT/
