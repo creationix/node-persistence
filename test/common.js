@@ -4,37 +4,13 @@ require.paths.unshift(__dirname + "/../lib");
 var backends = {
   postgres: require('persistence/postgres'),
   sqlite: require('persistence/sqlite'),
-  jsondb: require('persistence/jsondb'),
   memory: require('persistence/memory')
 };
 
 function connect(driver/*, *args */) {
   var path,
       args = Array.prototype.slice.call(arguments, 1);
-  switch (driver.toLowerCase()) {
-  case 'sqlite':
-  case 'sqlite3':
-    path = 'sqlite';
-    break;
-  case 'postgres':
-  case 'postgresql':
-    path = 'postgres';
-    break;
-  case 'mongo':
-  case 'mongodb':
-    path = 'mongo';
-    break;
-  case 'json':
-  case 'jsondb':
-    path = 'jsondb';
-    break;
-  case 'memory':
-    path = 'memory';
-    break;
-  default:
-    throw "Unknown driver: " + driver;
-  }
-  return backends[path].new_connection.apply(this, args);
+  return backends[driver].new_connection.apply(this, args);
 }
 
 exports.connect = connect;
@@ -54,7 +30,8 @@ exports.configs = {
     database: "test",
     username: "test",
     password: "password"
-  }
+  },
+  memory: "/tmp/test"
 };
 
 // Alias process.nextTick
