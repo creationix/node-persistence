@@ -7,7 +7,7 @@ var commands = {
   },
   test: function () {
     puts("Running tests:");
-    exec("ls test/sqlite/test-*.js | xargs -L 1 /usr/local/bin/node", function (error, stdout, stderr){
+    exec("ls test/**/test-*.js | xargs -L 1 /usr/local/bin/node", function (error, stdout, stderr){
       if (error) {
         throw(error);
       } else {
