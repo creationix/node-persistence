@@ -4,7 +4,7 @@ var good_connected = false,
     bad_failed = false,
     db2;
 
-before("sqlite").addCallback(function (db) {
+before("sqlite", function (db) {
 
   db.addListener('connection', function () {
     good_connected = true;

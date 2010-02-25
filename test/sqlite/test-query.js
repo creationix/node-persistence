@@ -4,9 +4,9 @@ var finished2 = false;
 var finished3 = false;
 var finished4 = false;
 
-before("sqlite").addCallback(function (db) {
+before("sqlite", function (db) {
 
-  db.query("SELECT null AS test1, 2 AS test2, 'hello' AS test3").addCallback(function (data) {
+  db.query("SELECT null AS test1, 2 AS test2, 'hello' AS test3", function (data) {
     assert.equal(data[0].test1, null);
     assert.equal(data[0].test2, '2');
     assert.equal(data[0].test3, 'hello');
@@ -18,7 +18,7 @@ before("sqlite").addCallback(function (db) {
     assert.equal(row.test2, '2');
     assert.equal(row.test3, 'hello');
     finished2 = true;
-  }).addCallback(function () {
+  }, function () {
     assert.equal(arguments.length, 0, "Streaming queries shouldn't return buffered results");
     finished3 = true;
   });

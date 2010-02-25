@@ -81,7 +81,9 @@ exports.before = function (type, callback) {
       if (err) {
         debug(err);
       }
-      done();
+      // Wait to lessen chance of race condition happening
+      // TODO: real async trigger
+      setTimeout(done, 200);
     });
   } else {
     defer(function () {

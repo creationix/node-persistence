@@ -23,7 +23,7 @@ var queries = [
   [[], 200]
 ];
 
-before("sqlite").addCallback(function (db) {
+before("sqlite", function (db) {
 
   db.addListener('error', debug);
 
@@ -33,18 +33,18 @@ before("sqlite").addCallback(function (db) {
   });
  
   for (var i = 0; i < 100; i++) {
-    store.save({name: "USER " + i, age: i});
-    store.save({name: "User " + i, age: i});
+    store.save({name: "USER " + i, age: i}, function () {});
+    store.save({name: "User " + i, age: i}, function () {});
   }
 
-  store.all().addCallback(function (data) {
+  store.all(function (data) {
     assert.equal(data.length, 200);
     finished1 = true;
   });
 
 
   queries.forEach(function (pair, i) {
-    store.find(pair[0]).addCallback(function (data) {
+    store.find(pair[0], function (data) {
       if (i === 0) {
         assert.equal(data[0].age, 50);
       }
