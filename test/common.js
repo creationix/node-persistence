@@ -1,11 +1,5 @@
-// Set up some useful paths
-var path = require("path");
-var testDir = path.dirname(__filename);
-var libDir = path.join(testDir, "../lib");
-
-
 // Add our package to the front of the library path
-require.paths.unshift(libDir);
+require.paths.unshift(__dirname + "/../lib");
 
 var backends = {
   postgres: require('persistence/postgres'),
@@ -65,31 +59,33 @@ exports.configs = {
   }
 };
 
+// Alias process.nextTick
+var defer = exports.defer = process.nextTick;
+
 var before_execs = {
   postgres: "/usr/local/bin/dropdb " + exports.configs.postgres.database + "; /usr/local/bin/createdb -O " + exports.configs.postgres.username + " " + exports.configs.postgres.database,
   sqlite: "rm -f " + exports.configs.sqlite
 }
 
 // Call these before each test to clean the slate
-exports.before = function (type) {
-  var promise = new process.Promise();
+exports.before = function (type, callback) {
   var done = function () {
     db = connect(type, configs[type]);
-    promise.emitSuccess(db);
-    setTimeout(function () {
+    callback(db);
+    defer(function () {
       db.close();
     });
   }
   if (before_execs[type]) {
-    exports.exec(before_execs[type]).addCallback(done).addErrback(function () {
-      debug(arguments[2]);
+    exports.exec(before_execs[type], function (err) {
+      if (err) {
+        debug(err);
+      }
       done();
     });
   } else {
-    setTimeout(function () {
+    defer(function () {
       done();
     });
   }
-  return promise;
 };
-  

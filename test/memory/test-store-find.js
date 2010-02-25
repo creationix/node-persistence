@@ -23,7 +23,7 @@ var queries = [
   [[], 100]
 ];
 
-before("memory").addCallback(function (db) {
+before("memory", function (db) {
 
   db.addListener('error', debug);
 
@@ -34,7 +34,7 @@ before("memory").addCallback(function (db) {
   
   var done = 0;
   for (var i = 0; i < 100; i++) {
-    store.save({name: "User " + i, age: i}).addCallback(function () {
+    store.save({name: "User " + i, age: i}, function () {
       done++;
       if (done === 100) {
         check_size();
@@ -43,7 +43,7 @@ before("memory").addCallback(function (db) {
   }
 
   function check_size() {
-    store.all().addCallback(function (data) {
+    store.all(function (data) {
       assert.equal(data.length, 100);
       finished1 = true;
       run_queries();
@@ -52,7 +52,7 @@ before("memory").addCallback(function (db) {
 
   function run_queries() {
     queries.forEach(function (pair, i) {
-      store.find(pair[0]).addCallback(function (data) {
+      store.find(pair[0], function (data) {
         if (i === 0) {
           assert.equal(data[0].age, 50);
         }

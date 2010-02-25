@@ -6,8 +6,11 @@ var finished4 = false;
 var finished5 = false;
 var finished6 = false;
 var finished7 = false;
+var finished8 = false;
+var finished9 = false;
+var finished10 = false;
 
-before("memory").addCallback(function (db) {
+before("memory", function (db) {
 
   // Connect to a valid database
   db.addListener('error', debug);
@@ -21,52 +24,52 @@ before("memory").addCallback(function (db) {
   var data = {name: "Tim", age: 27};
   var data3;
   // Save some data
-  store.save(data).addCallback(function (id) {
+  store.save(data, function (id) {
     assert.equal(id, 1);
     finished1 = true;
 
     // Load it back and check
-    store.get(data._id).addCallback(function (data2) {
+    store.get(data._id, function (data2) {
       assert.deepEqual(data2, data);
       finished2 = true;
 
       // Change some data and save update.
       data.age = 28;
-      store.save(data).addCallback(function (id) {
+      store.save(data, function (id) {
         assert.equal(id, undefined);
         finished3 = true;
 
         // Load it back to make sure it really changed.
-        store.get(data._id).addCallback(function (data2) {
+        store.get(data._id, function (data2) {
           assert.deepEqual(data2, data);
           finished4 = true;
         });
 
         // Create another row in parallel to the last get
         data3 = {name: "Bob", age: 105};
-        store.save(data3).addCallback(function (id) {
+        store.save(data3, function (id) {
           assert.equal(data3._id, id);
           assert.equal(id, 2);
           finished5 = true;
 
           //
-          store.remove(data3).addCallback(function () {
+          store.remove(data3, function () {
             assert.equal(data3._id, undefined);
             finished8 = true;
 
             store.each(function (row) {
               assert.deepEqual(row, data);
               finished6 = true;
-            }).addCallback(function () {
+            }, function () {
               finished7 = true;
             });
 
-            store.all().addCallback(function (all) {
+            store.all(function (all) {
               assert.deepEqual(all[0], data);
               finished9 = true;
 
-              store.nuke().addCallback(function () {
-                store.all().addCallback(function (all) {
+              store.nuke(function () {
+                store.all(function (all) {
                   assert.equal(all.length, 0);
                   finished10 = true;
                 });

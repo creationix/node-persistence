@@ -1,6 +1,6 @@
 process.mixin(require("../common"));
 
-before("memory").addCallback(function (db) {
+before("memory", function (db) {
 
   // Check that the db connection has the required methods
   ["get_store", "close"].forEach(function (method_name) {
