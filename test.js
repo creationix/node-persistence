@@ -9,12 +9,14 @@ Step(
     sys.puts("connect");
     DbDriver.connect('mydb.json', this);
   },
-  function getStore(db) {
-    sys.puts("getStore");
+  function getStore(err, db) {
+    if (err) { throw err; }
+    sys.puts("getStore", sys.inspect(db));
     this.db = db;
     db.getStore("people", this);
   },
-  function testStore(people) {
+  function testStore(err, people) {
+    if (err) { throw err; }
     people.get();
     people.update();
     people.insert();
@@ -23,7 +25,8 @@ Step(
     sys.p(people);
     this.db.close(this);
   },
-  function done() {
+  function done(err) {
+    if (err) { throw err; }
     sys.puts("done");
   }
 );
