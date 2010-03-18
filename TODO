@@ -1,0 +1,30 @@
+Installation
+
+Configuring your DB connection
+
+Store Overview
+
+	Get(query, options, callback) 
+	Insert(data, callback) 
+	Update(data, query, options, callback)
+	Remove(query, options, callback)
+
+		query can be integer or options hash
+		if query is integer then its get / save / remove by ID
+		if query is an options hash assume 	A simple condition is pairs of key's and values. This builds a condition where all columns named by the key must equal the corresponding value.
+		if query is {}, assume all (like WHERE 1=1 in SQL land)
+
+		options is an options hash
+		limit - truncate the amount of rows returned
+		
+		no-sql only
+			depth - integer - truncate the depth of nested objects
+			sort - callback function - sorts the results by custom method
+
+Saving data (Creates and Updates)
+
+Getting data (Reading and Searching)
+
+Removing data (Removing and Deleting)
+
+Using actual SQL with an RDBMS (not advised)
